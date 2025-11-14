@@ -33,6 +33,7 @@ Older adults, people living alone, users with limited mobility, and anyone prefe
 
 ## 🔧 Tech stack
 
+- Admin panel -website (or app) for family members to configure the elderly persons profile.
 - Silero VAD, voice detection
 - Twilio, call handling
 - Mu law converter, audio codec
