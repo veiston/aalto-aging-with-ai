@@ -9,7 +9,9 @@ Support independence, reduce tech complexity.
 
 ## 📗 What it does
 
-People call the number, or get reminder calls. It answers questions, explains things, suggests nearby activities, and can book events or call trusted contacts with clear consent.
+Elderly people call the number, or get reminder calls. It answers questions, explains things, suggests nearby activities, and can book events or call trusted contacts with clear consent.
+Can match the elderly persons call topic with what family member could help them the most.
+👪 Family members can create the initial profile for the elderly person which includes family relations data, disabilites, past injuries, common hard topics, medication.
 
 ## ⭐ Features
 
@@ -29,7 +31,7 @@ People call the number, or get reminder calls. It answers questions, explains th
 
 Older adults, people living alone, users with limited mobility, and anyone preferring voice over apps.
 
-## 🔧 Tech stack (5 words max)
+## 🔧 Tech stack
 
 - Silero VAD, voice detection
 - Twilio, call handling
@@ -48,6 +50,7 @@ Older adults, people living alone, users with limited mobility, and anyone prefe
 ## 🚫 What it cannot do yet
 
 - Make real calls
+- Message relatives based on family knowledge database
 - Manage identity or consent
 - Guarantee real time local data
 - Handle payments or bookings alone
