@@ -1,57 +1,93 @@
+'use client';
 
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import AppInnerHeader from '../../../../components/app/app-inner-header/app-inner-header.jsx';
 
-export default function SurveyDetailPage({ params }) {
-    const { id } = params;
+export default function SurveyDetailsPage() {
+    const { id } = useParams();
 
-    // placeholder mock data
-    const survey = {
-        id,
-        title: 'Public Transport Clarity Test',
-        status: 'Published',
-        date: '2025-11-15',
-        questions: [
-            { type: 'yes_no', text: 'Понятно ли вам уведомление?' },
-            { type: 'open', text: 'Что показалось непонятным?' },
-            { type: 'choices', text: 'Как вы обычно получаете уведомления?', options: ['Email', 'SMS', 'Бумага', 'Телефонные звонки'] }
-        ],
-        responses: [
-            { id: 1, answers: ['Да', 'Ничего', 'Бумага'] },
-            { id: 2, answers: ['Нет', 'Текст слишком длинный', 'Email'] }
-        ]
-    };
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!id) return;
+
+        async function fetchData() {
+            try {
+                // We keep requests, but we do NOT use the responses
+                await fetch(`http://127.0.0.1:8000/surveys/details/${id}`);
+                await fetch(`http://127.0.0.1:8000/responses/list/${id}`);
+            } catch (err) {
+                console.error('Error loading survey:', err);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchData();
+    }, [id]);
+
+    if (!id) return <p>Loading params...</p>;
+    if (loading) return <p>Loading...</p>;
 
     return (
-        <div className="page-container">
-            <h1 className="page-title">{survey.title}</h1>
-            <p className="survey-meta">Status: {survey.status}</p>
-            <p className="survey-meta">Date: {survey.date}</p>
+        <div>
+            <AppInnerHeader />
 
-            <h2 className="section-title">Questions JSON</h2>
-            <pre className="json-block">
-                {JSON.stringify(survey, null, 2)}
-            </pre>
+            <div className="survey-details">
 
-            <h2 className="section-title">Responses</h2>
-            <table className="survey-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Answers</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {survey.responses.map((r) => (
-                        <tr key={r.id}>
-                            <td>{r.id}</td>
-                            <td>{r.answers.join(', ')}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                <h1 className="text-h1 text-w-800">Public Transport Feedback</h1>
+                <p>Short survey about clarity of transport notifications.</p>
 
-            <div className="button-row">
-                <button className="btn-danger">Stop Survey</button>
-                <button className="btn-primary">Download CSV</button>
+                <h2 className="text-h2 text-w-500">Questions</h2>
+                <div className="questions">
+                    <div className="question-card">
+                        <p>Was the information clear?</p>
+                    </div>
+
+                    <div className="question-card">
+                        <p>What exactly was unclear?</p>
+                    </div>
+                </div>
+
+                <h2 className="text-h2 text-w-500">Latest Response</h2>
+
+                <div className="response-block">
+                    <div>
+                        <p><b>Q: </b> Was the information clear?</p>
+                        <p><b>A: </b> No</p>
+                    </div>
+                        <br></br>
+                    <div>
+                        <p><b>Q:</b> What exactly was unclear?</p>
+                        <p><b>A:</b> The timing of the schedule changes.</p>
+                    </div>
+                </div>
+
+                <style jsx>{`
+                    .survey-details {
+                        padding: 40px;
+                        color: #fff;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 32px;
+                    }
+                    .questions {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 16px;
+                    }
+                    .question-card {
+                        padding: 15px;
+                        border: 1px solid #333;
+                        background: #111;
+                    }
+                    .response-block {
+                        padding: 20px;
+                        background: #181818;
+                        border: 1px solid #333;
+                    }
+                `}</style>
             </div>
         </div>
     );

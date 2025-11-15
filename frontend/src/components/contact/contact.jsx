@@ -18,7 +18,7 @@ const Contact = () => {
           </span>
         </p>
         <div className={styles["contact__button"]}>
-          <Button onClick={() => router.push("/dashboard")}>
+          <Button onClick={() => router.push("/dashboard/surveys")}>
             Sign Up As A Resercher
           </Button>
         </div>

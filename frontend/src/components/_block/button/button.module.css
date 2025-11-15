@@ -64,9 +64,7 @@
 }
 
 .button.button--link {
-	@include heading-h5;
-
-	color: #ffffff;
+	color: #000000;
 	font-weight: 600;
 	padding: 0;
 	border: unset;

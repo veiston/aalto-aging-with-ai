@@ -20,11 +20,8 @@ export default function Home() {
       {/* WHAT THE PLATFORM DOES */}
       <Workflow />
 
+      {/* CONTACT THE PLATFORM */}
       <Contact />
-
     </main>
-
-
-
   );
 }

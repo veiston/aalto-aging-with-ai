@@ -18,7 +18,7 @@ class UserResponse(UserBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         
 class QuestionBase(BaseModel):
     type: str
@@ -33,7 +33,7 @@ class QuestionResponse(QuestionBase):
     survey_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SurveyBase(BaseModel):
     title: str
@@ -45,7 +45,7 @@ class SurveyResponse(SurveyBase):
     created_at: datetime
     questions: List[QuestionResponse]
     class Config:
-        orm_mode = True
+        from_attributes = True
 class AnswerItem(BaseModel):
     question_id: int
     response: Any

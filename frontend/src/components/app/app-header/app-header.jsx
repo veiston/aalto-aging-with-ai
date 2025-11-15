@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 const AppHeader = ({ children }) => {
 	const [hasShadow, setHasShadow] = useState(false);
 
+	const router = useRouter();
+
 	useEffect(() => {
 		const handleScroll = () => {
 			setHasShadow(window.scrollY > 0);
@@ -26,7 +28,7 @@ const AppHeader = ({ children }) => {
 			<div className={`${styles["app-header__container"]} layout`}>
 				<span className="text-w-800 text-display">ECH</span>
 				{children}
-				<Button onClick={() => router.push("/dashboard")}>
+				<Button onClick={() => router.push("/dashboard/surveys")}>
 					Sign In As a Researcher
 				</Button>
 			</div>

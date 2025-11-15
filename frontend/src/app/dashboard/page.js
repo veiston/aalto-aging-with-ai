@@ -1,7 +1,11 @@
 'use client';
+
+import AppInnerHeader from '../../components/app/app-inner-header/app-inner-header.jsx';
+
 export default function DashboardPage() {
     return (
         <div className="page-container">
+        <AppInnerHeader></AppInnerHeader>
             <h1 className="page-title">Dashboard</h1>
 
             <p className="page-subtitle">Welcome to your researcher workspace.</p>
@@ -9,7 +13,7 @@ export default function DashboardPage() {
             <div className="dashboard-grid">
                 <a href="/dashboard/surveys/create" className="dashboard-card">
                     <h2>Create Survey</h2>
-                    <p>Build a new voice-based survey for AR4U.</p>
+                    <p>Build a new voice-based survey for Voice AI Assistant.</p>
                 </a>
 
                 <a href="/dashboard/surveys" className="dashboard-card">
