@@ -27,3 +27,8 @@ python-dotenv
 # cd backend
 # source venv/bin/activate
 # uvicorn src.server:app --reload
+
+# Audio processing for test harness
+pydub
+imageio-ffmpeg
+ffmpeg-python

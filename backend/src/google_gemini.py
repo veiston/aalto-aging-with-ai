@@ -4,6 +4,7 @@ from typing import Dict, Optional
 
 import numpy as np
 from dotenv import load_dotenv
+import logging
 
 try:
     import google.generativeai as genai
@@ -20,8 +21,11 @@ from .google_speech_to_text import transcribe_mulaw_audio
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+# Preferred model name (will try to use, then fall back dynamically)
+PREFERRED_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-native-audio-preview")
 GEMINI_SYSTEM_PROMPT = os.getenv(
     "GEMINI_SYSTEM_PROMPT",
     "You are a calm aide supporting older adults via phone. Answer clearly, briefly, and safely.",
@@ -30,17 +34,82 @@ DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE_CODE", "en-US")
 DEFAULT_SPEAKING_RATE = float(os.getenv("DEFAULT_SPEAKING_RATE", "1.0"))
 OUTPUT_SAMPLE_RATE = 8000
 
-if genai and GOOGLE_API_KEY:
+def _normalize_model_name(name: Optional[str]) -> str:
+    if not name:
+        return ""
+    return name.split("/")[-1]
+
+
+def _resolve_gemini_model() -> Optional[object]:
+    if not genai or not GOOGLE_API_KEY:
+        return None
     try:
         configure_fn = getattr(genai, "configure", None)
         if configure_fn:
             configure_fn(api_key=GOOGLE_API_KEY)
+
+        preferred = _normalize_model_name(PREFERRED_GEMINI_MODEL)
+        list_models_fn = getattr(genai, "list_models", None)
         model_cls = getattr(genai, "GenerativeModel", None)
-        GEMINI_MODEL = model_cls(GEMINI_MODEL_NAME) if model_cls else None
+        if not model_cls:
+            logger.error("google.generativeai.GenerativeModel not available")
+            return None
+
+        # If we can list models, pick the best supported; otherwise try preferred then safe fallbacks
+        candidate_names: list[str] = []
+        if list_models_fn:
+            try:
+                available = list(list_models_fn())
+                supported = [m for m in available if 'generateContent' in getattr(m, 'supported_generation_methods', [])]
+                # Normalize names and build ranking
+                normalized_supported = [(_normalize_model_name(getattr(m, 'name', '')), m) for m in supported]
+
+                # Rank: exact preferred match -> contains '2.5'+'flash' -> contains '2.0'+'flash' -> contains '1.5'+'flash' -> contains 'pro' -> first
+                def score(name: str) -> tuple:
+                    return (
+                        0 if name == preferred else 1,
+                        0 if ('2.5' in name and 'flash' in name) else 1,
+                        0 if ('2.0' in name and 'flash' in name) else 1,
+                        0 if ('1.5' in name and 'flash' in name) else 1,
+                        0 if ('pro' in name) else 1,
+                    )
+
+                normalized_supported.sort(key=lambda nm: score(nm[0]))
+                candidate_names = [nm for nm, _m in normalized_supported]
+            except Exception:
+                logger.exception("Failed to list Gemini models; will try direct preferences")
+
+        # If no candidates from listing, try preferred then a set of safe fallbacks
+        if not candidate_names:
+            candidate_names = [
+                preferred,
+                "gemini-2.0-flash",
+                "gemini-2.0-flash-lite",
+                "gemini-1.5-flash",
+                "gemini-1.5-pro",
+            ]
+
+        # Try to instantiate in order
+        for name in candidate_names:
+            if not name:
+                continue
+            try:
+                model = model_cls(name)
+                # Quick smoke call? Avoid API call; assume construct succeeds
+                logger.info(f"Using Gemini model: {name}")
+                return model
+            except Exception:
+                logger.warning(f"Failed to initialize Gemini model '{name}', trying next...", exc_info=True)
+                continue
+
+        logger.error("No suitable Gemini model could be initialized.")
+        return None
     except Exception:
-        GEMINI_MODEL = None
-else:
-    GEMINI_MODEL = None
+        logger.exception("Error resolving Gemini model")
+        return None
+
+
+GEMINI_MODEL = _resolve_gemini_model()
 
 if texttospeech:
     try:
@@ -87,7 +156,8 @@ def generate_gemini_response(user_text: str, context: Optional[Dict] = None) -> 
         result = GEMINI_MODEL.generate_content(prompt)
         text = _extract_text(result)
         return text or "I want to be sure I understood. Could you restate that?"
-    except Exception:
+    except Exception as e:
+        logger.exception("Gemini generate_content failed")
         return "I'm having trouble reaching the assistant right now."
 
 
@@ -96,7 +166,11 @@ def synthesize_reply_audio(
     language_code: str = DEFAULT_LANGUAGE,
     speaking_rate: float = DEFAULT_SPEAKING_RATE,
 ) -> Optional[np.ndarray]:
-    if not text or not TTS_CLIENT or not texttospeech:
+    if not text:
+        logger.warning("synthesize_reply_audio called with no text.")
+        return None
+    if not TTS_CLIENT or not texttospeech:
+        logger.error("TextToSpeech client not available.")
         return None
 
     synthesis_input = texttospeech.SynthesisInput(text=text)
@@ -111,13 +185,16 @@ def synthesize_reply_audio(
     )
 
     try:
+        logger.info(f"Synthesizing audio for text: '{text[:50]}...'")
         response = TTS_CLIENT.synthesize_speech(
             input=synthesis_input,
             voice=voice,
             audio_config=audio_config,
         )
+        logger.info("Successfully synthesized audio.")
         return np.frombuffer(response.audio_content, dtype=np.int16)
     except Exception:
+        logger.exception("Google Text-to-Speech synthesis failed.")
         return None
 
 

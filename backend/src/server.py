@@ -14,7 +14,7 @@ from .mulaw_converter import linear_to_mulaw
 
 import wave
 import io
-import requests
+import requests 
 import numpy as np
 
 # Configure logging
@@ -37,7 +37,7 @@ def root():
 async def voice_record():
     """Simplest Twilio flow: record a short utterance, then process it."""
     resp = VoiceResponse()
-    resp.say("Hello. After the beep, please speak a short question.")
+    resp.say("Hello. After the beep, please say something to our AI.")
     resp.record(action="/process_recording", method="POST", play_beep=True, max_length=8, trim="do-not-trim")
     return PlainTextResponse(str(resp), media_type="text/xml")
 
@@ -46,15 +46,34 @@ async def process_recording(RecordingUrl: str = Form(...)):
     """Download the recording, run Gemini, reply with Twilio TTS via <Say>."""
     # Twilio provides a URL without extension. Append .wav to get the audio file.
     wav_url = RecordingUrl + ".wav"
-    r = requests.get(wav_url, timeout=15)
-    r.raise_for_status()
+    try:
+        r = requests.get(wav_url, timeout=15)
+        if r.status_code == 401 or r.status_code == 403:
+            # Try again with Twilio auth if private
+            from os import environ
+            sid = environ.get("TWILIO_ACCOUNT_SID")
+            token = environ.get("TWILIO_AUTH_TOKEN")
+            if sid and token:
+                r = requests.get(wav_url, auth=(sid, token), timeout=15)
+        r.raise_for_status()
+    except Exception as e:
+        logger.error(f"Failed to download recording from {wav_url}: {e}")
+        vr = VoiceResponse()
+        vr.say("Sorry, I couldn't retrieve your recording. Please try again later.")
+        return PlainTextResponse(str(vr), media_type="text/xml")
 
-    with wave.open(io.BytesIO(r.content), "rb") as wf:
-        n_channels = wf.getnchannels()
-        sampwidth = wf.getsampwidth()
-        framerate = wf.getframerate()
-        n_frames = wf.getnframes()
-        raw = wf.readframes(n_frames)
+    try:
+        with wave.open(io.BytesIO(r.content), "rb") as wf:
+            n_channels = wf.getnchannels()
+            sampwidth = wf.getsampwidth()
+            framerate = wf.getframerate()
+            n_frames = wf.getnframes()
+            raw = wf.readframes(n_frames)
+    except wave.Error as e:
+        logger.error(f"Error reading WAV content: {e}")
+        vr = VoiceResponse()
+        vr.say("Sorry, the audio format was not supported. Please try again.")
+        return PlainTextResponse(str(vr), media_type="text/xml")
 
     # Expect 16-bit PCM mono. If stereo, take first channel.
     dtype = np.int16 if sampwidth == 2 else np.int16
