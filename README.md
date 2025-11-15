@@ -125,7 +125,7 @@ pip install -r backend\requirements.txt
 .venv\Scripts\python.exe -m uvicorn backend.src.server:app --host 0.0.0.0 --port 8000
 ```
 
-4. **Expose with ngrok:**
+4. **Expose with ngrok in new terminal:**
 
 ```bash
 ngrok http 8000
@@ -148,20 +148,6 @@ Copy the https URL (e.g., `https://abc123.ngrok-free.app`)
 - `GET /` - Health check
 - `POST /voice_record` - Main call handler (record → Gemini → reply)
 - `POST /voice` + `WebSocket /ws` - Real-time streaming (advanced)
-
----
-
-## 🔧 Tech stack (legacy reference)
-
-- Admin panel for family and researchers
-- Silero VAD, voice detection
-- Twilio, call handling
-- Mu law converter, audio codec
-- Whisper, speech to text
-- AI voice mode, text to speech
-- Web search, local lookup
-
----
 
 ## 🤖 What ChatGPT can do now
 
