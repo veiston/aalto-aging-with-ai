@@ -139,3 +139,12 @@ web_modules/
 .yarn/install-state.gz
 .pnp.*
 .editorconfig
+
+# Python venv
+backend/venv/
+
+# Node modules
+frontend/node_modules/
+
+# macOS system files
+.DS_Store

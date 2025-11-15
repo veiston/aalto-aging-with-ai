@@ -3,10 +3,17 @@ twilio
 google-cloud-speech
 google-cloud-texttospeech
 openai
-google-generative-ai
+# google-generative-ai
+google-genai
 elevenlabs
 requests
 geopy
+
+# FastAPI server
+fastapi
+uvicorn[standard]
+pydantic
+sqlalchemy
 
 # Environment handling
 python-dotenv
@@ -14,3 +21,7 @@ python-dotenv
 # Notes:
 # - Some imports in the snippets are placeholders; install only the providers you will use.
 # - For Google Cloud packages, follow Google Cloud SDK authentication setup and enable APIs.
+
+# cd backend
+# source venv/bin/activate
+# uvicorn src.server:app --reload
