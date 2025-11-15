@@ -1,112 +1,159 @@
-"""
-Google Gemini - Alternative AI Choice
-Same as OpenAI but using Google's API for flexibility
-"""
+"""Gemini STT/LLM/TTS pipeline (Twilio-independent)."""
 import os
-from dotenv import load_dotenv
-load_dotenv()
+from typing import Dict, Optional
+
 import numpy as np
+from dotenv import load_dotenv
+
 try:
     import google.generativeai as genai
-except Exception:
+except ImportError:
     genai = None
 
-# Local imports for audio processing
-from google_speech_to_text import transcribe_mulaw_audio
-import mulaw_converter
+try:
+    from google.cloud import texttospeech
+except ImportError:
+    texttospeech = None
+
+from .google_speech_to_text import transcribe_mulaw_audio
 
 
-def generate_gemini_response(user_text: str, context: dict) -> str:
-    """
-    Get AI response using Google Gemini
-    Alternative to OpenAI
-    """
-    # If google generative library is available, configure with env API key
-    if genai and os.environ.get("GOOGLE_API_KEY"):
-        try:
-            genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-            model = genai.get_model("chat-bison") if hasattr(genai, "get_model") else None
-            if model:
-                resp = model.generate("Help elderly: {}\nUser: {}".format(context, user_text))
-                return getattr(resp, "text", str(resp))
-        except Exception:
-            pass
+load_dotenv()
 
-    # Placeholder fallback
-    return f"You said: '{user_text}'. There's a swimming lesson at 3 PM"
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_SYSTEM_PROMPT = os.getenv(
+    "GEMINI_SYSTEM_PROMPT",
+    "You are a calm aide supporting older adults via phone. Answer clearly, briefly, and safely.",
+)
+DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE_CODE", "en-US")
+DEFAULT_SPEAKING_RATE = float(os.getenv("DEFAULT_SPEAKING_RATE", "1.0"))
+OUTPUT_SAMPLE_RATE = 8000
 
-def generate_gemini_response_from_audio(mulaw_audio_chunk: bytes, context: dict) -> str:
-    """
-    Transcribes audio and gets an AI response using Google Gemini.
+if genai and GOOGLE_API_KEY:
+    try:
+        configure_fn = getattr(genai, "configure", None)
+        if configure_fn:
+            configure_fn(api_key=GOOGLE_API_KEY)
+        model_cls = getattr(genai, "GenerativeModel", None)
+        GEMINI_MODEL = model_cls(GEMINI_MODEL_NAME) if model_cls else None
+    except Exception:
+        GEMINI_MODEL = None
+else:
+    GEMINI_MODEL = None
 
-    Args:
-        mulaw_audio_chunk: A bytes object containing the mu-law encoded audio data.
-        context: A dictionary containing context for the AI model.
-
-    Returns:
-        The AI's response as a string.
-    """
-    # First, transcribe the audio chunk to text
-    transcribed_text = transcribe_mulaw_audio(mulaw_audio_chunk)
-    
-    if not transcribed_text:
-        return "I'm sorry, I didn't catch that. Could you please say it again?"
-
-    # Then, get the AI response based on the transcribed text
-    return generate_gemini_response(transcribed_text, context)
+if texttospeech:
+    try:
+        TTS_CLIENT = texttospeech.TextToSpeechClient()
+    except Exception:
+        TTS_CLIENT = None
+else:
+    TTS_CLIENT = None
 
 
-def gemini_text_to_speech(text: str) -> bytes:
-    """
-    Convert text to speech using Google
-    (May use Google Cloud Text-to-Speech separately)
-    """
-    # from google.cloud import texttospeech
-    # client = texttospeech.TextToSpeechClient()
-    # synthesis_input = texttospeech.SynthesisInput(text=text)
-    # voice = texttospeech.VoiceSelectionParams(language_code="en-US")
-    # response = client.synthesize_speech(...)
-    # return response.audio_content
-    
-    # Placeholder
-    return b"google_audio_here"
+def _context_to_prompt(context: Optional[Dict]) -> str:
+    if not context:
+        return ""
+    parts = [f"{key}: {value}" for key, value in context.items()]
+    return " | ".join(parts)
+
+
+def _extract_text(result) -> str:
+    if not result:
+        return ""
+    if getattr(result, "text", None):
+        return result.text.strip()
+    candidates = getattr(result, "candidates", [])
+    for candidate in candidates:
+        if not candidate.content:
+            continue
+        texts = [getattr(part, "text", "") for part in candidate.content.parts]
+        cleaned = " ".join(filter(None, texts)).strip()
+        if cleaned:
+            return cleaned
+    return ""
+
+
+def generate_gemini_response(user_text: str, context: Optional[Dict] = None) -> str:
+    user_text = (user_text or "").strip()
+    if not user_text:
+        return "I did not hear anything. Could you repeat that?"
+
+    if not GEMINI_MODEL:
+        return f"You said: '{user_text}'. This is a fallback response."
+
+    prompt = f"{GEMINI_SYSTEM_PROMPT}\nContext: {_context_to_prompt(context)}\nUser: {user_text}"
+    try:
+        result = GEMINI_MODEL.generate_content(prompt)
+        text = _extract_text(result)
+        return text or "I want to be sure I understood. Could you restate that?"
+    except Exception:
+        return "I'm having trouble reaching the assistant right now."
+
+
+def synthesize_reply_audio(
+    text: str,
+    language_code: str = DEFAULT_LANGUAGE,
+    speaking_rate: float = DEFAULT_SPEAKING_RATE,
+) -> Optional[np.ndarray]:
+    if not text or not TTS_CLIENT or not texttospeech:
+        return None
+
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=language_code,
+        ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL,
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16,
+        speaking_rate=speaking_rate,
+        sample_rate_hertz=8000,
+    )
+
+    try:
+        response = TTS_CLIENT.synthesize_speech(
+            input=synthesis_input,
+            voice=voice,
+            audio_config=audio_config,
+        )
+        return np.frombuffer(response.audio_content, dtype=np.int16)
+    except Exception:
+        return None
+
+
+def process_voice_turn(
+    mulaw_audio_chunk: bytes,
+    context: Optional[Dict] = None,
+    language_code: str = DEFAULT_LANGUAGE,
+    speaking_rate: float = DEFAULT_SPEAKING_RATE,
+) -> Dict[str, object]:
+    transcript = transcribe_mulaw_audio(mulaw_audio_chunk)
+    ai_text = generate_gemini_response(transcript, context)
+    linear_audio = synthesize_reply_audio(
+        ai_text,
+        language_code=language_code,
+        speaking_rate=speaking_rate,
+    )
+
+    return {
+        "transcript": transcript,
+        "ai_text": ai_text,
+        "linear_audio": linear_audio,
+        "sample_rate": OUTPUT_SAMPLE_RATE,
+    }
+
 
 if __name__ == "__main__":
-    # --- Test 1: Text-based Gemini response ---
-    print("--- Running Text-based Test ---")
-    text_response = generate_gemini_response(
-        "How do I make soup",
-        context={"dietary": "low-sodium", "allergies": []}
-    )
-    print("Gemini Response:", text_response)
-    
-    audio = gemini_text_to_speech(text_response)
-    print("Google TTS audio:", len(audio), "bytes")
-    print("-" * 20)
-
-    # --- Test 2: Audio-based Gemini response ---
-    # This test requires a configured Google Cloud project for transcription.
-    print("\n--- Running Audio-based Test ---")
-    # a. Create a dummy mu-law audio chunk (as if from Twilio)
-    # This is a silent audio chunk for testing the pipeline without real speech.
-    # The transcription will be empty, and the model should handle it gracefully.
     sample_rate = 8000
-    duration = 1  # 1 second of silence
-    silence_data = np.zeros(sample_rate * duration, dtype=np.int16)
-    mulaw_silence = mulaw_converter.linear_to_mulaw(silence_data)
+    duration = 1
+    t = np.arange(sample_rate * duration, dtype=np.float32)
+    tone = (np.sin(2 * np.pi * 220 * t / sample_rate) * 1000.0).astype(np.int16)
+    from .mulaw_converter import linear_to_mulaw
 
-    # b. Process the silent audio chunk
-    # Expected: The system will say it didn't understand.
-    audio_response = generate_gemini_response_from_audio(
-        mulaw_silence,
-        context={"user_id": "12345"}
+    mulaw_sample = linear_to_mulaw(tone)
+
+    result = process_voice_turn(
+        mulaw_sample,
+        context={"scenario": "demo"},
     )
-    print("Response from silent audio:", audio_response)
-
-    # To test with actual speech, you would need to load a real audio file.
-    # For example:
-    # with open("path/to/your/audio.mulaw", "rb") as f:
-    #     real_mulaw_audio = f.read()
-    # real_response = generate_gemini_response_from_audio(real_mulaw_audio, context={})
-    # print("Response from real audio:", real_response)
-    print("--- Audio Test Finished ---")
+    print({key: (len(val) if isinstance(val, (bytes, bytearray)) else val) for key, val in result.items()})
