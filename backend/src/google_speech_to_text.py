@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import numpy as np
 from google.cloud import speech
-import mulaw_converter
+from . import mulaw_converter
 
 # --- Authentication Note ---
 # This script uses Google Cloud's Application Default Credentials (ADC).
@@ -112,7 +112,8 @@ if __name__ == "__main__":
 
     # c. Convert it to mu-law to test the wrapper function
     print("\nTesting transcription with mu-law data...")
-    mulaw_data = mulaw_converter.linear_to_mulaw(linear_pcm_data)
+    from . import mulaw_converter as mc
+    mulaw_data = mc.linear_to_mulaw(linear_pcm_data)
     transcript_mulaw = transcribe_mulaw_audio(mulaw_data, sample_rate)
 
     if transcript_mulaw:

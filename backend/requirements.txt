@@ -12,6 +12,7 @@ geopy
 # FastAPI server
 fastapi
 uvicorn[standard]
+python-multipart
 pydantic
 sqlalchemy
 

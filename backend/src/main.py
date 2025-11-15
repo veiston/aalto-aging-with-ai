@@ -1,133 +1,89 @@
-"""
-Main Backend Orchestrator
+"""Main Orchestrator for voice pipeline."""
+from __future__ import annotations
 
-This script will be the main entry point for the backend application.
-It will handle incoming requests (e.g., from Twilio), process the audio,
-and generate responses using the various AI services.
-"""
-# Import necessary modules from the project
-from elevenlabs_voice import synthesize_speech
-from google_gemini import generate_gemini_response, gemini_text_to_speech
-from google_speech_to_text import transcribe_linear_audio
-from mulaw_converter import mulaw_to_linear, linear_to_mulaw
-from silero_vad import detect_voice_activity
-from twilio_calls import receive_call, make_reminder_call
-from whisper_stt import transcribe_audio
+import base64
+import os
+from typing import Dict, Optional
 
-# --- Web Server Setup (Placeholder) ---
-# In a real application, this would be a web server like Flask or FastAPI
-# that listens for webhooks from Twilio.
-#
-# Example with Flask:
-# from flask import Flask, request
-#
-# app = Flask(__name__)
-#
-# @app.route("/handle-call", methods=["POST"])
-def handle_call():
-    # The audio data would be in the request from Twilio
-    # audio_chunk = request.get_data() 
-    # response_audio = process_audio_chunk(audio_chunk)
-    # # We would then need to return a TwiML response with the audio
-    # return create_twiml_response(response_audio)
-    pass
+import numpy as np
+from twilio.twiml.voice_response import VoiceResponse
 
-def process_audio_chunk(audio_chunk: bytes, context: dict) -> bytes:
-    """
-    This is the core logic for processing a single chunk of audio.
-    It converts audio, detects speech, transcribes, gets an AI response,
-    and synthesizes the response back to audio.
-    """
-    print("Processing audio chunk...")
+from .google_gemini import process_voice_turn
+from .mulaw_converter import linear_to_mulaw
+from .silero_vad import detect_voice_activity
+from .twilio_calls import receive_call, setup_twilio_client
 
-    # 1. Convert mu-law audio from Twilio to linear PCM for processing.
-    # This is done once at the beginning for efficiency.
-    linear_audio = mulaw_to_linear(audio_chunk)
 
-    # 2. Use Silero VAD to check if there is speech in the audio.
-    # Note: is_speech might need to be adapted to work with chunks.
+def _mulaw_to_numpy(audio_chunk: bytes) -> np.ndarray:
+    from .mulaw_converter import mulaw_to_linear
+
+    return mulaw_to_linear(audio_chunk)
+
+
+def process_audio_chunk(audio_chunk: bytes, context: Dict) -> Optional[Dict[str, object]]:
+    linear_audio = _mulaw_to_numpy(audio_chunk)
     if not detect_voice_activity(linear_audio)["has_speech"]:
-        print("No speech detected in chunk.")
-        return None # Return nothing if no speech is detected
+        return None
 
-    print("Speech detected, proceeding with transcription and AI response.")
+    result = process_voice_turn(audio_chunk, context=context)
+    if not result:
+        return None
 
-    # 3. Transcribe the audio to text using the linear audio data.
-    transcribed_text = transcribe_audio(linear_audio)
-    if not transcribed_text:
-        print("Transcription resulted in empty text.")
-        # We can decide if we want to say something like "I didn't hear you clearly"
-        return None 
-    
-    print(f"Transcribed text: '{transcribed_text}'")
+    linear_audio_raw = result.get("linear_audio")
+    if linear_audio_raw is None:
+        return result
+    linear_audio_np = (
+        linear_audio_raw.astype(np.int16)
+        if isinstance(linear_audio_raw, np.ndarray)
+        else np.array([], dtype=np.int16)
+    )
+    mulaw_audio = linear_to_mulaw(linear_audio_np)
+    result.update({"linear_audio": linear_audio_np, "mulaw_audio": mulaw_audio})
+    return result
 
-    # 4. Generate a response using Google Gemini with the transcribed text.
-    ai_response_text = generate_gemini_response(transcribed_text, context)
-    print(f"AI Response: {ai_response_text}")
 
-    # 5. Convert the AI's text response back to speech.
-    # We have multiple options, let's use ElevenLabs for this example.
-    response_audio_linear_bytes = synthesize_speech(ai_response_text)
-    print(f"Generated {len(response_audio_linear_bytes)} bytes of speech.")
+def create_twiml_response(mulaw_audio: bytes) -> str:
+    if not mulaw_audio:
+        response = VoiceResponse()
+        response.say("I did not hear anything. Please try again.")
+        return str(response)
 
-    # Convert linear PCM bytes to numpy array for mulaw conversion
-    response_audio_linear_np = np.frombuffer(response_audio_linear_bytes, dtype=np.int16)
-
-    # 6. Convert the linear response audio back to mu-law for Twilio.
-    response_mulaw = linear_to_mulaw(response_audio_linear_np)
-
-    return response_mulaw
-
-def create_twiml_response(audio_chunk_mulaw: bytes):
-    """
-    Creates a TwiML response to play audio back to the user.
-    (This is a placeholder for the actual Twilio library usage).
-    """
-    # In a real Flask app, you'd return XML like this:
-    # from twilio.twiml.voice_response import VoiceResponse, Play
-    # import base64
-    #
-    # response = VoiceResponse()
-    # encoded_audio = base64.b64encode(audio_chunk_mulaw).decode('utf-8')
-    # response.play(f"data:audio/x-mulaw;base64,{encoded_audio}")
-    # return str(response)
-    print("Creating TwiML response (placeholder).")
-    return f"<Response><Play>...</Play></Response>"
+    encoded_audio = base64.b64encode(mulaw_audio).decode("utf-8")
+    response = VoiceResponse()
+    response.play(f"data:audio/x-mulaw;base64,{encoded_audio}")
+    return str(response)
 
 
 if __name__ == "__main__":
-    # This is a test block to simulate the process.
-    # In a real scenario, the web server would be running.
     print("--- Running Main Orchestrator Test ---")
 
-    # 1. Simulate receiving a call and getting context
-    call_info = receive_call(None, "CALL_SID_DUMMY")
-    print(f"Received call from: {call_info['from']}")
-    
-    # This would be retrieved from a database based on the caller's number
+    client = setup_twilio_client()
+    demo_call_sid = os.getenv("TWILIO_DEMO_CALL_SID")
+    call_info: Dict[str, str] = {"from": "unknown"}
+    if client and demo_call_sid:
+        fetched = receive_call(client, demo_call_sid)
+        call_info = fetched if isinstance(fetched, dict) else call_info
+    elif client:
+        print("Skipping Twilio call fetch; no TWILIO_DEMO_CALL_SID set.")
+    print(f"Received call from: {call_info.get('from', 'unknown')}")
+
     user_context = {
         "name": "John Doe",
         "preferences": ["swimming", "reading"],
-        "location": "Helsinki"
+        "location": "Helsinki",
     }
 
-    # 2. Simulate receiving an audio chunk (e.g., from a file)
-    # For this test, we'll create a dummy silent audio chunk.
-    # In a real test, you'd load a file with actual speech.
-    import numpy as np
     sample_rate = 8000
-    duration = 2  # seconds
+    duration = 2
     silence_data = np.zeros(sample_rate * duration, dtype=np.int16)
     mulaw_silence_chunk = linear_to_mulaw(silence_data)
 
-    # 3. Process the audio chunk
-    # With silent audio, this should be caught by the VAD and return None.
     print("\n--- Testing with silent audio ---")
-    response_audio = process_audio_chunk(mulaw_silence_chunk, user_context)
+    result = process_audio_chunk(mulaw_silence_chunk, user_context)
 
-    # 4. Create and "send" the TwiML response
-    if response_audio:
-        twiml = create_twiml_response(response_audio)
+    mulaw_payload = result.get("mulaw_audio") if result else None
+    if isinstance(mulaw_payload, (bytes, bytearray)) and mulaw_payload:
+        twiml = create_twiml_response(bytes(mulaw_payload))
         print("TwiML to send back to Twilio:")
         print(twiml)
     else:
