@@ -6,15 +6,13 @@ It will handle incoming requests (e.g., from Twilio), process the audio,
 and generate responses using the various AI services.
 """
 # Import necessary modules from the project
-from elevenlabs_voice import generate_elevenlabs_speech
+from elevenlabs_voice import synthesize_speech
 from google_gemini import generate_gemini_response, gemini_text_to_speech
 from google_speech_to_text import transcribe_linear_audio
 from mulaw_converter import mulaw_to_linear, linear_to_mulaw
-from openai_voice import generate_openai_speech
-from silero_vad import is_speech
+from silero_vad import detect_voice_activity
 from twilio_calls import receive_call, make_reminder_call
-from web_search import get_nearby_activities
-from whisper_stt import transcribe_audio_whisper
+from whisper_stt import transcribe_audio
 
 # --- Web Server Setup (Placeholder) ---
 # In a real application, this would be a web server like Flask or FastAPI
@@ -48,14 +46,14 @@ def process_audio_chunk(audio_chunk: bytes, context: dict) -> bytes:
 
     # 2. Use Silero VAD to check if there is speech in the audio.
     # Note: is_speech might need to be adapted to work with chunks.
-    if not is_speech(linear_audio):
+    if not detect_voice_activity(linear_audio)["has_speech"]:
         print("No speech detected in chunk.")
         return None # Return nothing if no speech is detected
 
     print("Speech detected, proceeding with transcription and AI response.")
 
     # 3. Transcribe the audio to text using the linear audio data.
-    transcribed_text = transcribe_linear_audio(linear_audio)
+    transcribed_text = transcribe_audio(linear_audio)
     if not transcribed_text:
         print("Transcription resulted in empty text.")
         # We can decide if we want to say something like "I didn't hear you clearly"
@@ -69,11 +67,14 @@ def process_audio_chunk(audio_chunk: bytes, context: dict) -> bytes:
 
     # 5. Convert the AI's text response back to speech.
     # We have multiple options, let's use ElevenLabs for this example.
-    response_audio_linear = generate_elevenlabs_speech(ai_response_text)
-    print(f"Generated {len(response_audio_linear)} bytes of speech.")
+    response_audio_linear_bytes = synthesize_speech(ai_response_text)
+    print(f"Generated {len(response_audio_linear_bytes)} bytes of speech.")
+
+    # Convert linear PCM bytes to numpy array for mulaw conversion
+    response_audio_linear_np = np.frombuffer(response_audio_linear_bytes, dtype=np.int16)
 
     # 6. Convert the linear response audio back to mu-law for Twilio.
-    response_mulaw = linear_to_mulaw(response_audio_linear)
+    response_mulaw = linear_to_mulaw(response_audio_linear_np)
 
     return response_mulaw
 

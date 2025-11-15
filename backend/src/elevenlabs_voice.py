@@ -29,7 +29,7 @@ def synthesize_speech(text: str, language: str = "en", voice_id: str = "default"
     # return b"".join(audio)
     
     # Placeholder
-    return b"audio_stream_here"
+    return b"audio_stream_here_"
 
 def get_voice_for_language(language: str) -> str:
     """Map language to optimal ElevenLabs voice"""
