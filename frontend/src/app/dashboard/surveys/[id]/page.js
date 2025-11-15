@@ -28,7 +28,7 @@ export default function SurveyDetailPage({ params }) {
 
             <h2 className="section-title">Questions JSON</h2>
             <pre className="json-block">
-{JSON.stringify(survey, null, 2)}
+                {JSON.stringify(survey, null, 2)}
             </pre>
 
             <h2 className="section-title">Responses</h2>

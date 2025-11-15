@@ -1,0 +1,41 @@
+.workflow {
+	background-color:  #000000;
+	color: #ffffff;
+}
+
+.workflow__container {
+	padding-block: 80px 60px;
+}
+
+.workflow__header {
+	display: flex;
+	justify-content: center;
+}
+
+.workflow__title {
+	text-align: center;
+	position: relative;
+	display: inline;
+}
+
+.workflow__title-image {
+    position: absolute;
+    top: -68px;
+    left: -18px;
+    filter: invert(1);
+    height: 90px;
+}
+
+.workflow__content {
+	padding-block: 20px;
+}
+
+.workflow__header + .workflow__content {
+	margin-top: 60px;
+}
+
+.workflow__list {
+	display: flex;
+	flex-direction: column;
+	gap: 40px;
+}

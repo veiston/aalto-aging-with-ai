@@ -1,0 +1,25 @@
+.textarea {
+	/* @include heading-h6;
+
+	border: 2px solid #ffffff; */
+	border-radius: 4px;
+	padding: 18px 24px;
+	width: 100%;
+	/* color: #ffffff; */
+	resize: none;
+	transition: background-color 0.15s ease, box-shadow 0.15s ease;
+
+	/* &::placeholder {
+		color: #e4e4e7;
+	} */
+
+	/* &:hover:not(:focus) {
+		background-color: #27272a;
+	}
+
+	&:focus {
+		outline: none;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2),
+			0 4px 8px rgba(24, 39, 75, 0.06);
+	} */
+}

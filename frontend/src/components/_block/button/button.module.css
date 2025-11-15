@@ -1,0 +1,120 @@
+.button {
+	@include button-text-1;
+
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-inline: 20px;
+	border-radius: 4px;
+	background-color: #ffffff;
+	color: #000000;
+	font-weight: 600;
+	cursor: pointer;
+	border: 2px solid transparent;
+	height: 48px;
+	transition: all 0.3s ease;
+
+	&:disabled {
+		background-color: $color-neutral;
+		pointer-events: none;
+	}
+
+	&:hover {
+		transform: scale(1.05);
+		background-color: #000000;
+		color: #ffffff;
+		border-color: #ffffff;
+	}
+
+	&:active {
+		transform: scale(1);
+	}
+}
+
+.button.button--square {
+	width: 48px;
+	padding: 0;
+
+	&:hover {
+		transform: scale(1.15);
+	}
+}
+
+.button.button--small {
+	@include button-text-2;
+
+	padding-inline: 16px;
+	height: 40px;
+}
+
+.button.button--small.button--square {
+	width: 40px;
+}
+
+.button.button--simple {
+	padding: 0;
+	border: unset;
+	background-color: unset;
+	color: inherit;
+	border-radius: 0;
+	font-size: inherit;
+	font-weight: inherit;
+	height: unset;
+}
+
+.button.button--link {
+	@include heading-h5;
+
+	color: #ffffff;
+	font-weight: 600;
+	padding: 0;
+	border: unset;
+	background-color: unset;
+	border-radius: 0;
+	height: unset;
+
+	&:after {
+		content: "";
+		position: absolute;
+		bottom: -2px;
+		left: 0;
+		height: 2px;
+		background-color: #ffffff;
+		width: 0;
+		transition: all 0.3s ease;
+	}
+
+	&:hover:after {
+		width: 100%;
+	}
+}
+
+.button.button--small.button--link {
+	@include heading-h6;
+}
+
+.button.button--light {
+	background-color: #000000;
+	color: #ffffff;
+	border-color: #ffffff;
+
+	&:hover {
+		background-color: #ffffff;
+		color: #000000;
+		border-color: #ffffff;
+	}
+}
+
+.button.button--link.button--light {
+	color: #000000;
+
+	&::after {
+		background-color: #000000;
+	}
+}
+
+.button.button--simple.button--light {
+	background-color: unset;
+	color: #000000;
+}

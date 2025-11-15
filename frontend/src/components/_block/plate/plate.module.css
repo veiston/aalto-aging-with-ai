@@ -1,0 +1,39 @@
+.plate {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	/* border: 2px solid #ffffff; */
+	border-radius: 4px;
+	/* color: #ffffff; */
+	text-align: center;
+	padding: 24px 37px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+.plate:hover {
+	/* background-color: #ffffff;
+	color: #000000; */
+	transform: scale(1.05);
+}
+
+.plate__icon {
+	width: 56px;
+	height: 56px;
+
+	svg {
+		width: 100%;
+		height: 100%;
+	}
+}
+
+.plate__title {
+	/* @include heading-h5; */
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.plate__icon + .plate__title {
+	padding-top: 32px;
+}
