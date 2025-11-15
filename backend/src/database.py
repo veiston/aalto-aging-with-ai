@@ -1,13 +1,15 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlmodel import SQLModel, create_engine, Session
 
 DATABASE_URL = "sqlite:///./surveys.db"
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False}  # only needed for SQLite
+    echo=True
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def create_db_and_tables():
+    SQLModel.metadata.create_all(engine)
 
-Base = declarative_base()
+def get_session():
+    with Session(engine) as session:
+        yield session

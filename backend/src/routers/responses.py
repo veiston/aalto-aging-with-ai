@@ -1,26 +1,63 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from ..database import SessionLocal
-from .. import models, schemas
+from fastapi import APIRouter, HTTPException, Depends
+from sqlmodel import Session, select
 
-router = APIRouter(prefix="/ar4u")
+from ..database import get_session
+from ..models import Survey, SurveyResponse, SurveyAnswerItem
+from ..schemas import SurveyAnswer
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+router = APIRouter(
+    prefix="/responses",
+    tags=["responses"]
+)
 
+@router.post("/", status_code=201)
+def submit_survey_response(payload: SurveyAnswer, session: Session = Depends(get_session)):
+    survey = session.get(Survey, payload.survey_id)
+    if not survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
 
-@router.post("/responses")
-def receive_response(payload: schemas.ResponseIn, db: Session = Depends(get_db)):
-    response = models.Response(
+    response = SurveyResponse(
         survey_id=payload.survey_id,
-        caller_id=payload.caller_id,
-        answers=payload.answers
+        session_id=payload.session_id
     )
-    db.add(response)
-    db.commit()
-    db.refresh(response)
-    return {"status": "ok", "id": response.id}
+    session.add(response)
+    session.commit()
+    session.refresh(response)
+
+    for item in payload.answers:
+        answer_item = SurveyAnswerItem(
+            response_id=response.id,
+            question_id=item.question_id,
+            response=str(item.response)
+        )
+        session.add(answer_item)
+
+    session.commit()
+    return {"status": "ok", "response_id": response.id}
+
+
+@router.get("/{survey_id}")
+def get_survey_responses(survey_id: int, session: Session = Depends(get_session)):
+    survey = session.get(Survey, survey_id)
+    if not survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    responses = session.exec(
+        select(SurveyResponse).where(SurveyResponse.survey_id == survey_id)
+    ).all()
+
+    result = []
+    for r in responses:
+        items = session.exec(
+            select(SurveyAnswerItem).where(SurveyAnswerItem.response_id == r.id)
+        ).all()
+
+        result.append({
+            "session_id": r.session_id,
+            "answers": [
+                {"question_id": it.question_id, "response": it.response}
+                for it in items
+            ]
+        })
+
+    return {"survey_id": survey_id, "responses": result}

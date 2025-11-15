@@ -1,23 +1,69 @@
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey
-from sqlalchemy.orm import relationship
-from .database import Base
+from sqlmodel import SQLModel, Field, Relationship
+from datetime import datetime
+from typing import List, Optional
 
-class Survey(Base):
-    __tablename__ = "surveys"
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    status = Column(String, default="draft")
-    payload = Column(JSON, nullable=False)
+    email: str
+    password_hash: str
+    full_name: str
 
-    responses = relationship("Response", back_populates="survey")
+    organization_type: str
+    organization_id: str
 
-class Response(Base):
-    __tablename__ = "responses"
+    is_email_verified: bool = False
+    is_active: bool = False
 
-    id = Column(Integer, primary_key=True, index=True)
-    survey_id = Column(Integer, ForeignKey("surveys.id"))
-    caller_id = Column(String)
-    answers = Column(JSON)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    survey = relationship("Survey", back_populates="responses")
+    surveys: List["Survey"] = Relationship(back_populates="user")
+
+
+class Survey(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    title: str
+    description: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    user: Optional[User] = Relationship(back_populates="surveys")
+
+    questions: List["Question"] = Relationship(back_populates="survey")
+    responses: List["SurveyResponse"] = Relationship(back_populates="survey")
+
+
+class Question(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    survey_id: int = Field(foreign_key="survey.id")
+    type: str
+    text: str
+    required: bool = False
+
+    # stored as JSON text
+    options: Optional[str] = None
+
+    survey: Optional[Survey] = Relationship(back_populates="questions")
+
+
+class SurveyResponse(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    survey_id: int = Field(foreign_key="survey.id")
+    session_id: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    survey: Optional[Survey] = Relationship(back_populates="responses")
+    answer_items: List["SurveyAnswerItem"] = Relationship(back_populates="response")
+
+
+class SurveyAnswerItem(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    response_id: int = Field(foreign_key="surveyresponse.id")
+    question_id: int
+    response: str
+
+    response: Optional[SurveyResponse] = Relationship(back_populates="answer_items")

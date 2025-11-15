@@ -5,7 +5,8 @@ from fastapi import FastAPI, Request, WebSocket, Form
 from fastapi.responses import PlainTextResponse
 from twilio.twiml.voice_response import VoiceResponse, Connect
 
-from .database import Base, engine
+from sqlmodel import SQLModel
+from .database import engine
 from .routers import surveys, responses
 from .main import process_audio_chunk
 from .google_gemini import process_voice_turn
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # Create tables
-Base.metadata.create_all(bind=engine)
+SQLModel.metadata.create_all(engine)
 
 app.include_router(surveys.router)
 app.include_router(responses.router)

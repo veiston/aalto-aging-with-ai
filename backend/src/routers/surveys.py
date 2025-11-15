@@ -1,58 +1,61 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from ..database import SessionLocal
-from .. import models, schemas
+from fastapi import APIRouter, HTTPException, Depends
+from sqlmodel import Session, select, delete
 
-router = APIRouter(prefix="/surveys")
+from ..database import get_session
+from ..models import Survey, Question
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+router = APIRouter(
+    prefix="/surveys",
+    tags=["surveys"]
+)
 
-@router.post("", response_model=schemas.SurveyOut)
-def create_survey(data: schemas.SurveyCreate, db: Session = Depends(get_db)):
-    survey = models.Survey(
-        title=data.title,
-        payload={"questions": [q.dict() for q in data.questions]},
-        status="draft",
+@router.post("/")
+def create_survey(payload: dict, session: Session = Depends(get_session)):
+    survey = Survey(
+        title=payload["title"],
+        description=payload["description"],
+        user_id=payload.get("user_id")
     )
-    db.add(survey)
-    db.commit()
-    db.refresh(survey)
+    session.add(survey)
+    session.commit()
+    session.refresh(survey)
+
+    for q in payload.get("questions", []):
+        question = Question(
+            survey_id=survey.id,
+            type=q["type"],
+            text=q["text"],
+            required=q.get("required", False),
+            options=q.get("options")
+        )
+        session.add(question)
+
+    session.commit()
     return survey
 
 
-@router.get("")
-def list_surveys(db: Session = Depends(get_db)):
-    surveys = db.query(models.Survey).all()
-    output = []
-    for s in surveys:
-        output.append({
-            "id": s.id,
-            "title": s.title,
-            "status": s.status,
-            "responses": len(s.responses)
-        })
-    return output
+@router.get("/")
+def list_surveys(session: Session = Depends(get_session)):
+    surveys = session.exec(select(Survey)).all()
+    return surveys
 
 
 @router.get("/{survey_id}")
-def get_survey(survey_id: int, db: Session = Depends(get_db)):
-    survey = db.query(models.Survey).filter(models.Survey.id == survey_id).first()
-    responses = db.query(models.Response).filter(models.Response.survey_id == survey_id).all()
+def get_survey(survey_id: int, session: Session = Depends(get_session)):
+    survey = session.get(Survey, survey_id)
+    if not survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+    return survey
 
-    return {
-        "survey": {
-            "id": survey.id,
-            "title": survey.title,
-            "status": survey.status,
-            "questions": survey.payload["questions"]
-        },
-        "responses": [
-            {"id": r.id, "caller_id": r.caller_id, "answers": r.answers}
-            for r in responses
-        ]
-    }
+
+@router.delete("/{survey_id}")
+def delete_survey(survey_id: int, session: Session = Depends(get_session)):
+    survey = session.get(Survey, survey_id)
+    if not survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    session.exec(delete(Question).where(Question.survey_id == survey_id))
+    session.delete(survey)
+    session.commit()
+
+    return {"status": "deleted"}
