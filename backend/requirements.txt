@@ -13,7 +13,7 @@ geopy
 fastapi
 uvicorn[standard]
 pydantic
-
+sqlalchemy
 
 # Environment handling
 python-dotenv
