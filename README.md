@@ -1,39 +1,83 @@
 # 📞 Easy Call Help
 
 **One line**  
-A simple phone line with AI that helps older adults stay independent and active, no apps needed.
+A simple voice based AI phone line that supports older adults, families, and researchers, no apps needed.
+
+---
 
 ## 🎯 Goal
 
-Support independence, reduce tech complexity.
+Increase independence, reduce tech friction, and create a safe communication channel between older adults, families, and research teams.
+
+---
 
 ## 📗 What it does
 
-Elderly people call the number, or get reminder calls. It answers questions, explains things, suggests nearby activities, and can book events or call trusted contacts with clear consent.
-Can match the elderly persons call topic with what family member could help them the most.
-👪 Family members can create the initial profile for the elderly person which includes family relations data, disabilites, past injuries, common hard topics, medication.
+### 🧩 Daily support
 
-## ⭐ Features
+- Answers questions with simple speech
+- Suggests nearby activities (no booking)
+- Gives reminder calls
+- Routes the call to the best matched family member when appropriate
+- Can search the web to give real time factual information regarding topics the elderly person is looking for.
 
-- Phone based, voice first
-- Local events and booking
-- Reminder calls
-- Multilingual, simple language
-- Clear consent before actions
+### 👪 Family profile
 
-## 🗣️ Example use
+Relatives set up an initial profile containing:
 
-- "What should I do today", checks nearby events and offers booking
-- "What is paddle", explains and offers signup
-- Medication reminders with short steps
+- Family relations
+- Disabilities, past injuries, medications
+- Stress points, communication preferences  
+  The system uses this for safer, personalized interactions.
+
+### 🔬 Scientific survey engine (new idea)
+
+Researchers upload text surveys.  
+AI converts them into natural phone interviews, runs the full call, records answers, and returns clean datasets.  
+This gives universities, cities, and UX teams affordable access to older adults, a group normally very hard and expensive to reach.
+
+### 🎙️ Voice state analysis (new idea)
+
+Before each survey or longer conversation, the AI analyzes the first seconds of speech:  
+pause length, speech rate, variability, rhythmic stability, loudness.  
+This estimates cognitive readiness and avoids overload by postponing when the person sounds fatigued.
+
+### 🚨 Health and wellbeing signals
+
+Detects early signs of decline or emergencies from pattern changes:  
+missed calls, slower speech, confusion spikes, changes in routine.  
+Sends alerts to a designated relative.  
+Never diagnoses, only notifies about patterns.
+
+### 📊 Opinion and micro statistics
+
+Runs short in call micro surveys.  
+Collects anonymized opinions and self reported data for city planning, social care, and research.
+
+---
+
+## ⭐ Feature list
+
+- Voice first phone interactions
+- Daily support and reminders
+- Family configured context and routing
+- Scientific surveys by phone
+- Voice based readiness analysis
+- Early pattern detection and alerts
+- Micro surveys and statistics
+- Multilingual simple language
+
+---
 
 ## 👥 Who it helps
 
-Older adults, people living alone, users with limited mobility, and anyone preferring voice over apps.
+Older adults, people living alone, families who need early signals, municipalities, researchers, and UX teams.
+
+---
 
 ## 🔧 Tech stack
 
-- Admin panel -website (or app) for family members to configure the elderly persons profile.
+- Admin panel for family and researchers
 - Silero VAD, voice detection
 - Twilio, call handling
 - Mu law converter, audio codec
@@ -41,25 +85,32 @@ Older adults, people living alone, users with limited mobility, and anyone prefe
 - AI voice mode, text to speech
 - Web search, local lookup
 
+---
+
 ## 🤖 What ChatGPT can do now
 
 - Understand voice prompts
 - Summarize, explain, translate
-- Generate dialog and flows
-- Classify intent and slots
+- Generate dialog structures
+- Do intent and slot extraction
 
-## 🚫 What it cannot do yet
+---
 
-- Make real calls
-- Message relatives based on family knowledge database
-- Manage identity or consent
+## 🚫 What the system cannot do
+
+- Book anything or make external reservations
 - Guarantee real time local data
-- Handle payments or bookings alone
-- Detect emergencies safely
+- Manage identity or verify consent alone
+- Diagnose medical conditions
+- Replace human review for emergency alerts
+
+---
 
 ## 🛠️ Next steps
 
-Prototype call flows, integrate one event source, test consent language, run a small pilot.
+Build call flows, implement survey importer, test readiness analysis rules, integrate event data, and run an early pilot.
+
+---
 
 ## 📩 Contact
 

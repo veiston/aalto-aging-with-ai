@@ -1,0 +1,16 @@
+numpy
+twilio
+google-cloud-speech
+google-cloud-texttospeech
+openai
+google-generative-ai
+elevenlabs
+requests
+geopy
+
+# Environment handling
+python-dotenv
+
+# Notes:
+# - Some imports in the snippets are placeholders; install only the providers you will use.
+# - For Google Cloud packages, follow Google Cloud SDK authentication setup and enable APIs.
