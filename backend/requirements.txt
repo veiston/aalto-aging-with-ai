@@ -2,9 +2,8 @@ numpy
 twilio
 google-cloud-speech
 google-cloud-texttospeech
+google-generativeai
 openai
-# google-generative-ai
-google-genai
 elevenlabs
 requests
 geopy

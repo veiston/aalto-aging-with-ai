@@ -81,15 +81,73 @@ Older adults, people living alone, families who need early signals, municipaliti
 
 ## 🔧 Tech stack
 
-- Admin panel for family and researchers
-- Silero VAD, voice detection
-- Twilio, call handling
-- Mu law converter, audio codec
-- Whisper, speech to text
-- AI voice mode, text to speech
-- Web search, local lookup
+- FastAPI backend server with Twilio webhooks
+- Google Gemini (LLM + TTS)
+- Google Cloud Speech-to-Text
+- Silero VAD for voice activity detection
+- Mu-law audio codec for telephony
+- Next.js dashboard (frontend)
 
 ---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.8+
+- Twilio account with phone number
+- Google Cloud account with Speech-to-Text and Text-to-Speech APIs enabled
+- Google Gemini API key
+- ngrok (for local testing)
+
+### Setup
+
+1. **Clone and install dependencies:**
+
+```bash
+git clone https://github.com/veiston/aalto-aging-with-ai.git
+cd aalto-aging-with-ai
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r backend\requirements.txt
+```
+
+2. **Configure environment variables:**
+
+- Copy `.env.example` to `.env`
+- Fill in your credentials:
+  - Twilio: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`
+  - Google: `GOOGLE_APPLICATION_CREDENTIALS` (path to service account JSON), `GOOGLE_API_KEY`
+
+3. **Start the server:**
+
+```bash
+.venv\Scripts\python.exe -m uvicorn backend.src.server:app --host 0.0.0.0 --port 8000
+```
+
+4. **Expose with ngrok in new terminal:**
+
+```bash
+ngrok http 8000
+```
+
+Copy the https URL (e.g., `https://abc123.ngrok-free.app`)
+
+5. **Configure Twilio webhook:**
+
+- Go to Twilio Console → Phone Numbers
+- Select your number
+- Set "A call comes in" webhook to: `https://YOUR_NGROK_URL/voice_record` (POST)
+- Save
+
+6. **Test:**
+   Call your Twilio number and speak after the beep!
+
+### API Endpoints
+
+- `GET /` - Health check
+- `POST /voice_record` - Main call handler (record → Gemini → reply)
+- `POST /voice` + `WebSocket /ws` - Real-time streaming (advanced)
 
 ## 🤖 What ChatGPT can do now
 
