@@ -3,10 +3,17 @@ twilio
 google-cloud-speech
 google-cloud-texttospeech
 openai
-google-generative-ai
+# google-generative-ai
+google-genai
 elevenlabs
 requests
 geopy
+
+# FastAPI server
+fastapi
+uvicorn[standard]
+pydantic
+
 
 # Environment handling
 python-dotenv
