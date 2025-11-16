@@ -15,6 +15,8 @@ A voice‑based participation platform where older adults shape society through 
 - Loneliness and low participation reduce well‑being  
 - Institutions lack affordable access to older adults’ input 
 
+---
+
 ## 📗 Solution
 
 **Easy Call Help**  
@@ -122,11 +124,6 @@ Copy the https URL (e.g., `https://abc123.ngrok-free.app`)
 - `POST /responses/create` — Submit response  
 - `GET /responses/list/{survey_id}` — List responses  
 - `GET /responses/details/{response_id}` — Response details  
----
-
-## 🛠️ Next steps
-
-Build call flows, implement survey importer, test readiness analysis rules, integrate event data, and run an early pilot.
 
 ---
 
