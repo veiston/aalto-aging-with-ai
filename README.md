@@ -3,17 +3,17 @@
 ## Twilio
 
 +15075568288
- 
+
 A voice‑based participation platform where older adults shape society through simple phone conversations.
 
 ---
 
 ## 🎯 Problem
 
-- Many older adults remain unreachable online  
-- Digital surveys miss those with the most lived experience  
-- Loneliness and low participation reduce well‑being  
-- Institutions lack affordable access to older adults’ input 
+- Many older adults remain unreachable online
+- Digital surveys miss those with the most lived experience
+- Loneliness and low participation reduce well‑being
+- Institutions lack affordable access to older adults’ input
 
 ---
 
@@ -26,13 +26,13 @@ A phone‑based survey system that lets older adults answer institutional questi
 
 ## ⭐ How It Works
 
-1. A verified institution creates a survey in the dashboard  
-2. The backend stores questions in a structured format  
-3. The system converts questions into natural dialogue  
-4. The voice assistant calls participants  
-5. Older adults answer by speaking normally  
-6. Responses are converted into clean text  
-7. The institution views results in the dashboard  
+1. A verified institution creates a survey in the dashboard
+2. The backend stores questions in a structured format
+3. The system converts questions into natural dialogue
+4. The voice assistant calls participants
+5. Older adults answer by speaking normally
+6. Responses are converted into clean text
+7. The institution views results in the dashboard
 
 ---
 
@@ -109,21 +109,23 @@ Copy the https URL (e.g., `https://abc123.ngrok-free.app`)
 ## API Endpoints
 
 ### Voice
+
 - `GET /` - Health check
 - `POST /voice_record` - Main call handler (record → Gemini → reply)
 - `POST /voice` + `WebSocket /ws` - Real-time streaming (advanced)
 
-
 ### Surveys
-- `POST /surveys/create` — Create survey  
-- `GET /surveys/list` — List all surveys  
-- `GET /surveys/details/{id}` — Survey details  
-- `DELETE /surveys/delete/{id}` — Delete survey  
+
+- `POST /surveys/create` — Create survey
+- `GET /surveys/list` — List all surveys
+- `GET /surveys/details/{id}` — Survey details
+- `DELETE /surveys/delete/{id}` — Delete survey
 
 ### Responses
-- `POST /responses/create` — Submit response  
-- `GET /responses/list/{survey_id}` — List responses  
-- `GET /responses/details/{response_id}` — Response details  
+
+- `POST /responses/create` — Submit response
+- `GET /responses/list/{survey_id}` — List responses
+- `GET /responses/details/{response_id}` — Response details
 
 ---
 
