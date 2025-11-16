@@ -3,8 +3,7 @@
 ## Twilio
 
 +15075568288
-
-**One line**  
+ 
 A voice‑based participation platform where older adults shape society through simple phone conversations.
 
 ---
