@@ -5,83 +5,45 @@
 +15075568288
 
 **One line**  
-A simple voice based AI phone line that supports older adults, families, and researchers, no apps needed.
+A voice‑based participation platform where older adults shape society through simple phone conversations.
 
 ---
 
-## 🎯 Goal
+## 🎯 Problem
 
-Increase independence, reduce tech friction, and create a safe communication channel between older adults, families, and research teams.
+- Many older adults remain unreachable online  
+- Digital surveys miss those with the most lived experience  
+- Loneliness and low participation reduce well‑being  
+- Institutions lack affordable access to older adults’ input 
 
----
+## 📗 Solution
 
-## 📗 What it does
-
-### 🧩 Daily support
-
-- Answers questions with simple speech
-- Suggests nearby activities (no booking)
-- Gives reminder calls
-- Routes the call to the best matched family member when appropriate
-- Can search the web to give real time factual information regarding topics the elderly person is looking for.
-
-### 👪 Family profile
-
-Relatives set up an initial profile containing:
-
-- Family relations
-- Disabilities, past injuries, medications
-- Stress points, communication preferences  
-  The system uses this for safer, personalized interactions.
-
-### 🔬 Scientific survey engine (new idea)
-
-Researchers upload text surveys.  
-AI converts them into natural phone interviews, runs the full call, records answers, and returns clean datasets.  
-This gives universities, cities, and UX teams affordable access to older adults, a group normally very hard and expensive to reach.
-
-### 🎙️ Voice state analysis (new idea)
-
-Before each survey or longer conversation, the AI analyzes the first seconds of speech:  
-pause length, speech rate, variability, rhythmic stability, loudness.  
-This estimates cognitive readiness and avoids overload by postponing when the person sounds fatigued.
-
-### 🚨 Health and wellbeing signals
-
-Detects early signs of decline or emergencies from pattern changes:  
-missed calls, slower speech, confusion spikes, changes in routine.  
-Sends alerts to a designated relative.  
-Never diagnoses, only notifies about patterns.
-
-### 📊 Opinion and micro statistics
-
-Runs short in call micro surveys.  
-Collects anonymized opinions and self reported data for city planning, social care, and research.
+**Easy Call Help**  
+A phone‑based survey system that lets older adults answer institutional questions through natural voice conversations. No apps, no screens, no digital skills required.
 
 ---
 
-## ⭐ Feature list
+## ⭐ How It Works
 
-- Voice first phone interactions
-- Daily support and reminders
-- Family configured context and routing
-- Scientific surveys by phone
-- Voice based readiness analysis
-- Early pattern detection and alerts
-- Micro surveys and statistics
-- Multilingual simple language
+1. A verified institution creates a survey in the dashboard  
+2. The backend stores questions in a structured format  
+3. The system converts questions into natural dialogue  
+4. The voice assistant calls participants  
+5. Older adults answer by speaking normally  
+6. Responses are converted into clean text  
+7. The institution views results in the dashboard  
 
 ---
 
 ## 👥 Who it helps
 
-Older adults, people living alone, families who need early signals, municipalities, researchers, and UX teams.
+Older adults, people living alone, municipalities, researchers.
 
 ---
 
 ## 🔧 Tech stack
 
-- FastAPI backend server with Twilio webhooks
+- FastAPI + SQLModel backend server with Twilio webhooks
 - Google Gemini (LLM + TTS)
 - Google Cloud Speech-to-Text
 - Silero VAD for voice activity detection
@@ -128,7 +90,7 @@ pip install -r backend\requirements.txt
 4. **Expose with ngrok in new terminal:**
 
 ```bash
-ngrok http 8000
+ngrok http 8000 --region eu
 ```
 
 Copy the https URL (e.g., `https://abc123.ngrok-free.app`)
@@ -143,29 +105,24 @@ Copy the https URL (e.g., `https://abc123.ngrok-free.app`)
 6. **Test:**
    Call your Twilio number and speak after the beep!
 
-### API Endpoints
+## API Endpoints
 
+### Voice
 - `GET /` - Health check
 - `POST /voice_record` - Main call handler (record → Gemini → reply)
 - `POST /voice` + `WebSocket /ws` - Real-time streaming (advanced)
 
-## 🤖 What ChatGPT can do now
 
-- Understand voice prompts
-- Summarize, explain, translate
-- Generate dialog structures
-- Do intent and slot extraction
+### Surveys
+- `POST /surveys/create` — Create survey  
+- `GET /surveys/list` — List all surveys  
+- `GET /surveys/details/{id}` — Survey details  
+- `DELETE /surveys/delete/{id}` — Delete survey  
 
----
-
-## 🚫 What the system cannot do
-
-- Book anything or make external reservations
-- Guarantee real time local data
-- Manage identity or verify consent alone
-- Diagnose medical conditions
-- Replace human review for emergency alerts
-
+### Responses
+- `POST /responses/create` — Submit response  
+- `GET /responses/list/{survey_id}` — List responses  
+- `GET /responses/details/{response_id}` — Response details  
 ---
 
 ## 🛠️ Next steps
